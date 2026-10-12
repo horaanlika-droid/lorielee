@@ -269,7 +269,9 @@
       "characters": 450,
       "file": "podcast_revoice/part_022.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 37.248,
+      "audio_sha256": "2f496856257febe46b53c878e0e91fbc349cfcabafac0f4a9b3f252b768f126d"
     },
     {
       "id": 23,
@@ -279,7 +281,9 @@
       "characters": 1422,
       "file": "podcast_revoice/part_023.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 104.28,
+      "audio_sha256": "89b0f9ba8bcdb10d428d5dd287c30b72a5414ea784d9da9372e8e065c65e1ecc"
     },
     {
       "id": 24,
@@ -289,7 +293,9 @@
       "characters": 1469,
       "file": "podcast_revoice/part_024.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 113.568,
+      "audio_sha256": "e0ca881292db185e3b1f6f1205bccd62754c0e6edaecade8e163366071505d6c"
     },
     {
       "id": 25,
@@ -299,7 +305,9 @@
       "characters": 379,
       "file": "podcast_revoice/part_025.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 24.72,
+      "audio_sha256": "55017ebc80020ffc2c5c91e5fccd7490b0522517c1a3fd26582be1af4b212803"
     },
     {
       "id": 26,
@@ -309,7 +317,9 @@
       "characters": 1450,
       "file": "podcast_revoice/part_026.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 113.208,
+      "audio_sha256": "46759f643a415b1f4c78e71032f47b5f429c8a050317ea5affeb3a782cad5705"
     },
     {
       "id": 27,
@@ -319,7 +329,9 @@
       "characters": 1469,
       "file": "podcast_revoice/part_027.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 113.496,
+      "audio_sha256": "f306368ee73608aff406e5134df0aacac2febb893a48f98c752bc2bff6f48ace"
     },
     {
       "id": 28,
@@ -329,7 +341,9 @@
       "characters": 206,
       "file": "podcast_revoice/part_028.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 20.04,
+      "audio_sha256": "7a4776fe591d81bd1abed2991fbba052b0d896101f5f72da8a07bce96c0b13be"
     },
     {
       "id": 29,
@@ -339,7 +353,9 @@
       "characters": 1500,
       "file": "podcast_revoice/part_029.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 113.736,
+      "audio_sha256": "62f461002f23af1b347ee3a997c01ff4050f8bc99181af908af5a1e28614b0ab"
     },
     {
       "id": 30,
@@ -349,7 +365,9 @@
       "characters": 1487,
       "file": "podcast_revoice/part_030.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 108.432,
+      "audio_sha256": "82ff5d66be42ee2917d71179a6c734911c1e2efb9eaa91674a087dfdbbd25b42"
     },
     {
       "id": 31,
@@ -359,7 +377,9 @@
       "characters": 1472,
       "file": "podcast_revoice/part_031.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 114.072,
+      "audio_sha256": "efcb02b35810f18dd163e5ed310dee54a809cb8ba86c42cc2e458d3b6089ad3a"
     },
     {
       "id": 32,
