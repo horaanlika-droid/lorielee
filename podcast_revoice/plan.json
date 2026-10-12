@@ -149,7 +149,9 @@
       "characters": 1435,
       "file": "podcast_revoice/part_012.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 100.488,
+      "audio_sha256": "8ec37a87618fa44418667f5e79525477b2d4b479e08f0f69090b72ec4abb12da"
     },
     {
       "id": 13,
@@ -159,7 +161,9 @@
       "characters": 334,
       "file": "podcast_revoice/part_013.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 24.696,
+      "audio_sha256": "83100c1be04c3b9df4aa72d8d49404d8a70eada83ba0359fddcbf06c62b4e7ec"
     },
     {
       "id": 14,
@@ -169,7 +173,9 @@
       "characters": 1437,
       "file": "podcast_revoice/part_014.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 95.784,
+      "audio_sha256": "c7db1dd50d0d20be634629b4eced82dcc8ff2e956541d044c499749fe820d6f0"
     },
     {
       "id": 15,
@@ -179,7 +185,9 @@
       "characters": 1418,
       "file": "podcast_revoice/part_015.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 91.104,
+      "audio_sha256": "84d93d7dae7d291b45756a9ca8bbbc9a8ca4e0d3bcf8d354807f1a228d630efe"
     },
     {
       "id": 16,
@@ -189,7 +197,9 @@
       "characters": 661,
       "file": "podcast_revoice/part_016.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 51.528,
+      "audio_sha256": "a18dd6a015158ad3fda90a639d0d7bc4d074d53667357363c15e055f77793f04"
     },
     {
       "id": 17,
@@ -199,7 +209,9 @@
       "characters": 1499,
       "file": "podcast_revoice/part_017.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 101.664,
+      "audio_sha256": "7830502baece52c73d85d03c9f95dce2a0bcbc24de6fedf7bd3301a5d43cd8ab"
     },
     {
       "id": 18,
@@ -209,7 +221,9 @@
       "characters": 1483,
       "file": "podcast_revoice/part_018.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 95.904,
+      "audio_sha256": "3fb5b955454874fd036d9d57ed6f45d5303be5fa9d47581cf02156a42c00675a"
     },
     {
       "id": 19,
@@ -219,7 +233,9 @@
       "characters": 689,
       "file": "podcast_revoice/part_019.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 50.424,
+      "audio_sha256": "d0b9cd9cdcdcd8450347073938be96900a012186dff7b48367879fa3ac26d0ba"
     },
     {
       "id": 20,
@@ -229,7 +245,9 @@
       "characters": 1491,
       "file": "podcast_revoice/part_020.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 101.424,
+      "audio_sha256": "cd65310132e0fb5e3720ab2a963b0b1eb79b19746b70e584d3ce685696eae631"
     },
     {
       "id": 21,
@@ -239,7 +257,9 @@
       "characters": 1467,
       "file": "podcast_revoice/part_021.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 105.984,
+      "audio_sha256": "813df47f09e1cfb27583d8719ad695edadcacc6e55c5d254bd639a650c9c81df"
     },
     {
       "id": 22,
@@ -391,5 +411,65 @@
       "reused_preview": false,
       "status": "pending"
     }
-  ]
+  ],
+  "round_clip_limit_note": "Максимум 10 вызовов generate_speech за один раунд. Лимит привязан к одному ответу агента в рамках одного пользовательского хода и не сбрасывается внутри него: попытка второго раунда тем же ходом вернёт ошибку \"Speech generation limit of 10 reached for this turn\". Следующий раунд — только в следующем ответе. Проверял 2026-10-12: раунд 012-021 прошёл, раунд 022-031 тем же ходом отклонён.",
+  "draft_output": "lorielee_draft.mp3",
+  "draft": {
+    "output": "lorielee_draft.mp3",
+    "clips": [
+      1,
+      21
+    ],
+    "clip_count": 21,
+    "complete_chapters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "partial_chapters": [
+      7
+    ],
+    "duration_seconds": 1666.2,
+    "audio_sha256": "349d454b028335ceadb0a22f93ccaf249c7fa31176d487c48ddcd429d6c6c8d6",
+    "chapters": [
+      {
+        "number": 1,
+        "title": "Дом под дорогой",
+        "start_seconds": 0.0
+      },
+      {
+        "number": 2,
+        "title": "Скрипка и контора",
+        "start_seconds": 257.48
+      },
+      {
+        "number": 3,
+        "title": "Первый дождь",
+        "start_seconds": 525.53
+      },
+      {
+        "number": 4,
+        "title": "Испания до войны",
+        "start_seconds": 747.5
+      },
+      {
+        "number": 5,
+        "title": "Возвращение через горы",
+        "start_seconds": 970.41
+      },
+      {
+        "number": 6,
+        "title": "Любовь без удобного конца",
+        "start_seconds": 1209.85
+      },
+      {
+        "number": 7,
+        "title": "До главной книги",
+        "start_seconds": 1458.85
+      }
+    ]
+  }
 }

@@ -176,15 +176,12 @@ def status(batch: int, show_text: bool) -> None:
         print("All clips are ready. Run assemble to create the single full MP3.")
 
 
-def assemble() -> None:
+def render(clips: list[dict], plan: dict, destination: Path, title: str, artist: str) -> tuple[list[dict], float]:
+    """Concatenate the given clips into one tagged MP3 without touching the final episode."""
     import imageio_ffmpeg
     from mutagen.id3 import CHAP, CTOC, TIT2
     from mutagen.mp3 import MP3
 
-    plan = load_plan()
-    pending = refresh(plan)
-    if pending:
-        raise ValueError(f"Cannot assemble: {len(pending)} clips are still missing")
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     work = ROOT / ".podcast_work"
     work.mkdir(exist_ok=True)
@@ -198,7 +195,7 @@ def assemble() -> None:
             output.setnchannels(1)
             output.setsampwidth(2)
             output.setframerate(SAMPLE_RATE)
-            for clip in plan["clips"]:
+            for clip in clips:
                 if clip["chapter"] != previous_chapter:
                     if previous_chapter is not None:
                         pause_samples = round(plan["chapter_pause_seconds"] * SAMPLE_RATE)
@@ -217,8 +214,8 @@ def assemble() -> None:
         subprocess.run([ffmpeg, "-v", "error", "-y", "-i", str(wav_path),
                         "-af", "loudnorm=I=-18:TP=-1.5:LRA=7", "-ar", str(SAMPLE_RATE),
                         "-ac", "1", "-c:a", "libmp3lame", "-b:a", "128k",
-                        "-metadata", "title=Лори Ли. Дорога домой",
-                        "-metadata", "artist=Синтетический рассказчик", str(mp3_path)], check=True)
+                        "-metadata", f"title={title}",
+                        "-metadata", f"artist={artist}", str(mp3_path)], check=True)
         audio = MP3(mp3_path)
         if abs(audio.info.length - sample_count / SAMPLE_RATE) > 1:
             raise ValueError("The final duration does not match the assembled PCM")
@@ -238,12 +235,59 @@ def assemble() -> None:
                             sub_frames=[TIT2(encoding=3, text="Главы")]))
         audio.save()
         subprocess.run([ffmpeg, "-v", "error", "-i", str(mp3_path), "-f", "null", "-"], check=True)
-        mp3_path.replace(ROOT / plan["final_output"])
-    plan["assembly"] = {"output": plan["final_output"], "duration_seconds": round(audio.info.length, 3),
-                        "audio_sha256": checksum(ROOT / plan["final_output"]), "chapters": navigation}
+        mp3_path.replace(destination)
+    return navigation, audio.info.length
+
+
+def assemble() -> None:
+    plan = load_plan()
+    pending = refresh(plan)
+    if pending:
+        raise ValueError(f"Cannot assemble: {len(pending)} clips are still missing")
+    destination = ROOT / plan["final_output"]
+    navigation, duration = render(plan["clips"], plan, destination,
+                                  "Лори Ли. Дорога домой", "Синтетический рассказчик")
+    plan["assembly"] = {"output": plan["final_output"], "duration_seconds": round(duration, 3),
+                        "audio_sha256": checksum(destination), "chapters": navigation}
     save_plan(plan)
     (PLAN.parent / "chapters.json").write_text(json.dumps(navigation, ensure_ascii=False, indent=2) + "\n")
-    print(f"Assembled {plan['final_output']}: {audio.info.length:.1f} seconds")
+    print(f"Assembled {plan['final_output']}: {duration:.1f} seconds")
+    for chapter in navigation:
+        seconds = int(chapter["start_seconds"])
+        print(f"{seconds // 60:02d}:{seconds % 60:02d} | {chapter['title']}")
+
+
+def draft() -> None:
+    """Build a preview MP3 from the clips that are ready; never replaces the full episode."""
+    plan = load_plan()
+    refresh(plan)
+    clips = [clip for clip in plan["clips"] if clip["status"] == "generated"]
+    if not clips:
+        raise ValueError("Cannot build a draft: no clip is ready yet")
+    if len(clips) == len(plan["clips"]):
+        raise ValueError("Every clip is ready; run assemble to build the final episode instead")
+    name = plan.get("draft_output", "lorielee_draft.mp3")
+    if name == plan["final_output"]:
+        raise ValueError("The draft must not share the name of the final episode")
+    first, last = clips[0]["id"], clips[-1]["id"]
+    chapters = {clip["chapter"] for clip in clips}
+    covered = sorted(chapters)
+    complete = [number for number in covered
+                if all(clip["chapter"] != number or clip["status"] == "generated"
+                       for clip in plan["clips"])]
+    title = (f"Лори Ли. Дорога домой — черновик, фрагменты {first:03d}-{last:03d} "
+             f"(главы {covered[0]}-{covered[-1]})")
+    destination = ROOT / name
+    navigation, duration = render(clips, plan, destination, title, "Синтетический рассказчик (черновик)")
+    plan["draft"] = {"output": name, "clips": [first, last], "clip_count": len(clips),
+                     "complete_chapters": complete, "partial_chapters":
+                     [number for number in covered if number not in complete],
+                     "duration_seconds": round(duration, 3),
+                     "audio_sha256": checksum(destination), "chapters": navigation}
+    save_plan(plan)
+    print(f"Draft {name}: {duration:.1f} seconds, {len(clips)}/{len(plan['clips'])} clips")
+    print(f"Complete chapters: {complete}; partial: "
+          f"{[number for number in covered if number not in complete]}")
     for chapter in navigation:
         seconds = int(chapter["start_seconds"])
         print(f"{seconds // 60:02d}:{seconds % 60:02d} | {chapter['title']}")
@@ -259,13 +303,16 @@ def main() -> None:
     status_parser.add_argument("--batch", type=int, choices=range(1, 11), default=10)
     status_parser.add_argument("--show-text", action="store_true")
     commands.add_parser("assemble")
+    commands.add_parser("draft")
     args = parser.parse_args()
     if args.command == "plan":
         make_plan(args.voice_id, args.preview)
     elif args.command == "status":
         status(args.batch, args.show_text)
-    else:
+    elif args.command == "assemble":
         assemble()
+    else:
+        draft()
 
 
 if __name__ == "__main__":
