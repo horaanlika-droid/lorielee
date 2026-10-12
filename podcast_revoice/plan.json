@@ -389,7 +389,9 @@
       "characters": 1494,
       "file": "podcast_revoice/part_032.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 107.064,
+      "audio_sha256": "522a74603fcfcd7b4cbc993750fc321d49360a9fb05a32c4a92e7ce5f698d02c"
     },
     {
       "id": 33,
@@ -399,7 +401,9 @@
       "characters": 301,
       "file": "podcast_revoice/part_033.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 22.104,
+      "audio_sha256": "91172914f8f360a2e556c11616415636108c545c40e7b1197d0425af6072aac2"
     },
     {
       "id": 34,
@@ -409,7 +413,9 @@
       "characters": 1383,
       "file": "podcast_revoice/part_034.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 93.528,
+      "audio_sha256": "cfbe6c0bdaae39ddac90ff7259e0d95b93e49a63d1797dc50e010df37958e477"
     },
     {
       "id": 35,
@@ -419,7 +425,9 @@
       "characters": 1478,
       "file": "podcast_revoice/part_035.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 106.824,
+      "audio_sha256": "74143ed166094eb2f2851ebb71b6fe4b05a3662c338471c79c9cb2e75f2b848a"
     },
     {
       "id": 36,
@@ -429,7 +437,9 @@
       "characters": 58,
       "file": "podcast_revoice/part_036.mp3",
       "reused_preview": false,
-      "status": "pending"
+      "status": "generated",
+      "duration_seconds": 4.704,
+      "audio_sha256": "de54db5a689f1362a68fe54641628018e63aba8d1cb52bb9cb655d689854e92f"
     }
   ],
   "round_clip_limit_note": "Максимум 10 вызовов generate_speech за один раунд. Лимит привязан к одному ответу агента в рамках одного пользовательского хода и не сбрасывается внутри него: попытка второго раунда тем же ходом вернёт ошибку \"Speech generation limit of 10 reached for this turn\". Следующий раунд — только в следующем ответе. Проверял 2026-10-12: раунд 012-021 прошёл, раунд 022-031 тем же ходом отклонён.",
@@ -489,6 +499,73 @@
         "number": 7,
         "title": "До главной книги",
         "start_seconds": 1458.85
+      }
+    ]
+  },
+  "assembly": {
+    "output": "lorielee_full_podcast.mp3",
+    "duration_seconds": 2868.336,
+    "audio_sha256": "65f99e64894e090fa7a2bb72fd8be9a818fed52eb17543214a44e63949454792",
+    "chapters": [
+      {
+        "number": 1,
+        "title": "Дом под дорогой",
+        "start_seconds": 0.0
+      },
+      {
+        "number": 2,
+        "title": "Скрипка и контора",
+        "start_seconds": 257.48
+      },
+      {
+        "number": 3,
+        "title": "Первый дождь",
+        "start_seconds": 525.53
+      },
+      {
+        "number": 4,
+        "title": "Испания до войны",
+        "start_seconds": 747.5
+      },
+      {
+        "number": 5,
+        "title": "Возвращение через горы",
+        "start_seconds": 970.41
+      },
+      {
+        "number": 6,
+        "title": "Любовь без удобного конца",
+        "start_seconds": 1209.85
+      },
+      {
+        "number": 7,
+        "title": "До главной книги",
+        "start_seconds": 1458.85
+      },
+      {
+        "number": 8,
+        "title": "Книга, которую узнали все",
+        "start_seconds": 1704.51
+      },
+      {
+        "number": 9,
+        "title": "Новая жизнь в старой долине",
+        "start_seconds": 1948.098
+      },
+      {
+        "number": 10,
+        "title": "Старые записи",
+        "start_seconds": 2195.874
+      },
+      {
+        "number": 11,
+        "title": "То, что осталось между книгами",
+        "start_seconds": 2419.134
+      },
+      {
+        "number": 12,
+        "title": "Дорога домой",
+        "start_seconds": 2663.39
       }
     ]
   }
