@@ -121,6 +121,65 @@ class RevoiceTests(unittest.TestCase):
             self.assertEqual(result["assembly"]["audio_sha256"], workflow.checksum(root / "full.mp3"))
             self.assertTrue((root / "podcast_revoice/chapters.json").is_file())
 
+    def test_draft_builds_partial_preview_without_touching_full_mp3(self):
+        import imageio_ffmpeg
+        from mutagen.mp3 import MP3
+
+        def tone(root, number):
+            file = f"part_{number:03d}.mp3"
+            subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-v", "error", "-y", "-f", "lavfi",
+                            "-i", f"sine=frequency={440 * number}:duration=0.25",
+                            "-ar", "24000", "-ac", "1", "-c:a", "libmp3lame", "-b:a", "64k",
+                            str(root / file)], check=True)
+            return file
+
+        with self.temporary_root() as temp:
+            root = Path(temp)
+            script = root / "podcast_full_script.md"
+            script.write_text("Intro is not narrated.\n\n## Глава 1. Первая\n\nПервая глава.\n\n"
+                              "## Глава 2. Вторая\n\nВторая глава.\n\n"
+                              "## Глава 3. Третья\n\nТретья глава.\n")
+            source = workflow.chapters(script.read_text())
+            clips = [{"id": chapter["number"], "chapter": chapter["number"],
+                      "chapter_title": chapter["title"], "text": chapter["text"],
+                      "characters": len(chapter["text"]),
+                      "file": f"part_{chapter['number']:03d}.mp3"} for chapter in source]
+            plan = {"voice_id": "voice-00", "script_sha256": workflow.checksum(script),
+                    "chapter_pause_seconds": 1.2, "final_output": "full.mp3",
+                    "draft_output": "draft.mp3", "clips": clips}
+            plan_path = root / "podcast_revoice/plan.json"
+            with patch.multiple(workflow, ROOT=root, SCRIPT=script, PLAN=plan_path):
+                workflow.save_plan(plan)
+                (root / "full.mp3").write_bytes(b"previous full recording")
+                tone(root, 1)
+                tone(root, 2)
+                plan["draft_output"] = "full.mp3"
+                workflow.save_plan(plan)
+                with self.assertRaisesRegex(ValueError, "must not share the name"):
+                    workflow.draft()
+                plan["draft_output"] = "draft.mp3"
+                workflow.save_plan(plan)
+                with contextlib.redirect_stdout(io.StringIO()):
+                    workflow.draft()
+                audio = MP3(root / "draft.mp3")
+                result = json.loads(plan_path.read_text())
+                self.assertEqual((root / "full.mp3").read_bytes(), b"previous full recording")
+                self.assertEqual(audio.info.channels, 1)
+                self.assertEqual(audio.info.sample_rate, 24000)
+                self.assertAlmostEqual(audio.info.length, 1.7, delta=0.15)
+                self.assertEqual(len(audio.tags.getall("CHAP")), 2)
+                self.assertEqual(len(audio.tags.getall("CTOC")), 1)
+                self.assertEqual(result["draft"]["clips"], [1, 2])
+                self.assertEqual(result["draft"]["clip_count"], 2)
+                self.assertEqual(result["draft"]["complete_chapters"], [1, 2])
+                self.assertEqual(result["draft"]["partial_chapters"], [])
+                self.assertEqual(result["draft"]["audio_sha256"], workflow.checksum(root / "draft.mp3"))
+                self.assertEqual(result["draft"]["chapters"][0]["start_seconds"], 0)
+                self.assertNotIn("assembly", result)
+                tone(root, 3)
+                with self.assertRaisesRegex(ValueError, "run assemble"):
+                    workflow.draft()
+
 
 if __name__ == "__main__":
     unittest.main()
