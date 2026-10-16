@@ -252,7 +252,7 @@ def make_cover(styles) -> list:
         [[
             Paragraph('<font name="DejaVu-Bold" color="#587461">9</font><br/><font size="7">ОСЕЙ РАЗБОРА</font>', styles["Callout"]),
             Paragraph('<font name="DejaVu-Bold" color="#587461">1</font><br/><font size="7">ЛОКАЛЬНАЯ БИОГРАФИЯ</font>', styles["Callout"]),
-            Paragraph('<font name="DejaVu-Bold" color="#B96E4C">0</font><br/><font size="7">КНИГ ЛИ ДЛЯ БЛИЗКОГО ЧТЕНИЯ</font>', styles["Callout"]),
+            Paragraph('<font name="DejaVu-Bold" color="#587461">4</font><br/><font size="7">ТЕКСТА ЛИ ПРОЧИТАНО В ОТКРЫТОМ ДОСТУПЕ</font>', styles["Callout"]),
         ]],
         colWidths=[available / 3] * 3,
     )
