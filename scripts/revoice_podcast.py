@@ -17,10 +17,40 @@ import wave
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "podcast_full_script.md"
-PLAN = ROOT / "podcast_revoice" / "plan.json"
+DEFAULT_SCRIPT = ROOT / "podcast_full_script.md"
+DEFAULT_PLAN = ROOT / "podcast_revoice" / "plan.json"
+DEFAULT_OUTPUT = "lorielee_full_podcast.mp3"
+# Keep these module-level aliases for the existing command line and unit tests.
+SCRIPT = DEFAULT_SCRIPT
+PLAN = DEFAULT_PLAN
 CHAPTER_RE = re.compile(r"^## Глава (\d+)\. (.+)\n", re.MULTILINE)
 SAMPLE_RATE = 24000
+
+
+def project_path(value: str | Path) -> Path:
+    """Resolve a stored or CLI path relative to the repository root."""
+    path = Path(value).expanduser()
+    return path.resolve() if path.is_absolute() else (ROOT / path).resolve()
+
+
+def path_reference(path: str | Path) -> str:
+    """Store project paths portably and external paths as absolute references."""
+    resolved = project_path(path)
+    try:
+        return resolved.relative_to(ROOT.resolve()).as_posix()
+    except ValueError:
+        return str(resolved)
+
+
+def default_output_for(script: Path) -> str:
+    return DEFAULT_OUTPUT if script.name == DEFAULT_SCRIPT.name else f"{script.stem}.mp3"
+
+
+def script_title(script: Path) -> str:
+    for line in script.read_text(encoding="utf-8").splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    return "Лори Ли. Дорога домой"
 
 
 def checksum(path: Path) -> str:
@@ -102,38 +132,52 @@ def load_plan() -> dict:
     return plan
 
 
-def make_plan(voice_id: str, preview: str) -> None:
+def make_plan(voice_id: str, preview: str | None = None,
+              final_output: str | Path | None = None) -> None:
     if PLAN.exists():
         raise ValueError("A plan already exists; use status, do not overwrite it")
     source = chapters(SCRIPT.read_text())
     clips = []
+    clip_directory = PLAN.parent
+    preview_reference = None
+    if preview:
+        preview_path = project_path(preview)
+        if not preview_path.is_file():
+            raise ValueError("The selected-voice preview is missing")
+        preview_reference = path_reference(preview_path)
+
     for chapter in source:
         body = chapter["text"]
         parts = []
-        if chapter["number"] == 1:
-            if not (ROOT / preview).is_file():
-                raise ValueError("The selected-voice preview is missing")
+        if chapter["number"] == 1 and preview_reference:
             first_paragraph = body.split("\n\n", 1)[0]
             if len(first_paragraph) > 1500:
                 raise ValueError("Preview paragraph exceeds the TTS limit")
-            parts.append((first_paragraph, preview))
+            parts.append((first_paragraph, preview_reference))
             body = body[len(first_paragraph):].strip()
         parts.extend((part, None) for part in split_text(body))
         for text, existing in parts:
             number = len(clips) + 1
+            clip_path = clip_directory / f"part_{number:03d}.mp3"
             clips.append({"id": number, "chapter": chapter["number"],
                           "chapter_title": chapter["title"], "text": text,
                           "characters": len(text),
-                          "file": existing or f"podcast_revoice/part_{number:03d}.mp3",
+                          "file": existing or path_reference(clip_path),
                           "reused_preview": bool(existing)})
+    output = path_reference(final_output) if final_output else default_output_for(SCRIPT)
     plan = {"version": 1, "voice_id": voice_id, "language": "ru",
-            "script": str(SCRIPT.relative_to(ROOT)), "script_sha256": checksum(SCRIPT),
+            "script": path_reference(SCRIPT), "script_sha256": checksum(SCRIPT),
+            "title": script_title(SCRIPT),
             "character_limit": 1500, "round_clip_limit": 10,
-            "chapter_pause_seconds": 1.2, "final_output": "lorielee_full_podcast.mp3",
+            "chapter_pause_seconds": 1.2, "final_output": output,
             "clips": clips}
     validate_plan(plan)
     save_plan(plan)
-    print(f"Planned {len(clips)} clips; clip 001 reuses the selected-voice preview.")
+    if clips and clips[0]["reused_preview"]:
+        note = "clip 001 reuses the selected-voice preview"
+    else:
+        note = "no preview clip reused"
+    print(f"Planned {len(clips)} clips; {note}.")
 
 
 def refresh(plan: dict) -> list[dict]:
@@ -141,7 +185,7 @@ def refresh(plan: dict) -> list[dict]:
 
     pending = []
     for clip in plan["clips"]:
-        path = ROOT / clip["file"]
+        path = project_path(clip["file"])
         if not path.is_file():
             clip["status"] = "pending"
             clip.pop("duration_seconds", None)
@@ -204,7 +248,7 @@ def render(clips: list[dict], plan: dict, destination: Path, title: str, artist:
                     navigation.append({"number": clip["chapter"], "title": clip["chapter_title"],
                                        "start_seconds": sample_count / SAMPLE_RATE})
                     previous_chapter = clip["chapter"]
-                pcm = subprocess.run([ffmpeg, "-v", "error", "-i", str(ROOT / clip["file"]),
+                pcm = subprocess.run([ffmpeg, "-v", "error", "-i", str(project_path(clip["file"])),
                                       "-ar", str(SAMPLE_RATE), "-ac", "1", "-f", "s16le", "-"],
                                      check=True, capture_output=True).stdout
                 if not pcm or len(pcm) % 2:
@@ -239,35 +283,44 @@ def render(clips: list[dict], plan: dict, destination: Path, title: str, artist:
     return navigation, audio.info.length
 
 
-def assemble() -> None:
+def assemble(output: str | Path | None = None) -> None:
     plan = load_plan()
+    if output:
+        plan["final_output"] = path_reference(output)
     pending = refresh(plan)
     if pending:
         raise ValueError(f"Cannot assemble: {len(pending)} clips are still missing")
-    destination = ROOT / plan["final_output"]
+    destination = project_path(plan["final_output"])
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    title = plan.get("title", "Лори Ли. Дорога домой")
     navigation, duration = render(plan["clips"], plan, destination,
-                                  "Лори Ли. Дорога домой", "Синтетический рассказчик")
+                                  title, "Синтетический рассказчик")
+    plan["final_output"] = path_reference(destination)
     plan["assembly"] = {"output": plan["final_output"], "duration_seconds": round(duration, 3),
                         "audio_sha256": checksum(destination), "chapters": navigation}
     save_plan(plan)
-    (PLAN.parent / "chapters.json").write_text(json.dumps(navigation, ensure_ascii=False, indent=2) + "\n")
+    chapters_path = PLAN.parent / "chapters.json"
+    chapters_path.parent.mkdir(parents=True, exist_ok=True)
+    chapters_path.write_text(json.dumps(navigation, ensure_ascii=False, indent=2) + "\n")
     print(f"Assembled {plan['final_output']}: {duration:.1f} seconds")
     for chapter in navigation:
         seconds = int(chapter["start_seconds"])
         print(f"{seconds // 60:02d}:{seconds % 60:02d} | {chapter['title']}")
 
 
-def draft() -> None:
+def draft(output: str | Path | None = None) -> None:
     """Build a preview MP3 from the clips that are ready; never replaces the full episode."""
     plan = load_plan()
+    if output:
+        plan["draft_output"] = path_reference(output)
     refresh(plan)
     clips = [clip for clip in plan["clips"] if clip["status"] == "generated"]
     if not clips:
         raise ValueError("Cannot build a draft: no clip is ready yet")
     if len(clips) == len(plan["clips"]):
         raise ValueError("Every clip is ready; run assemble to build the final episode instead")
-    name = plan.get("draft_output", "lorielee_draft.mp3")
-    if name == plan["final_output"]:
+    name = plan.get("draft_output", f"{Path(plan['final_output']).stem}_draft.mp3")
+    if project_path(name) == project_path(plan["final_output"]):
         raise ValueError("The draft must not share the name of the final episode")
     first, last = clips[0]["id"], clips[-1]["id"]
     chapters = {clip["chapter"] for clip in clips}
@@ -275,10 +328,13 @@ def draft() -> None:
     complete = [number for number in covered
                 if all(clip["chapter"] != number or clip["status"] == "generated"
                        for clip in plan["clips"])]
-    title = (f"Лори Ли. Дорога домой — черновик, фрагменты {first:03d}-{last:03d} "
-             f"(главы {covered[0]}-{covered[-1]})")
-    destination = ROOT / name
+    title = (f"{plan.get('title', 'Лори Ли. Дорога домой')} — черновик, "
+             f"фрагменты {first:03d}-{last:03d} (главы {covered[0]}-{covered[-1]})")
+    destination = project_path(name)
+    destination.parent.mkdir(parents=True, exist_ok=True)
     navigation, duration = render(clips, plan, destination, title, "Синтетический рассказчик (черновик)")
+    name = path_reference(destination)
+    plan["draft_output"] = name
     plan["draft"] = {"output": name, "clips": [first, last], "clip_count": len(clips),
                      "complete_chapters": complete, "partial_chapters":
                      [number for number in covered if number not in complete],
@@ -293,26 +349,63 @@ def draft() -> None:
         print(f"{seconds // 60:02d}:{seconds % 60:02d} | {chapter['title']}")
 
 
-def main() -> None:
+def add_path_arguments(parser: argparse.ArgumentParser, *, child: bool = False) -> None:
+    default = argparse.SUPPRESS if child else None
+    parser.add_argument("--script", default=default,
+                        help="source Markdown script (default: podcast_full_script.md)")
+    parser.add_argument("--plan", default=default,
+                        help="JSON plan file (default: podcast_revoice/plan.json)")
+    parser.add_argument("--out", default=default,
+                        help="assembled MP3 path; for plan, stores the output path in the plan")
+
+
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    add_path_arguments(parser)
     commands = parser.add_subparsers(dest="command", required=True)
+
     plan_parser = commands.add_parser("plan")
+    add_path_arguments(plan_parser, child=True)
     plan_parser.add_argument("--voice-id", required=True)
-    plan_parser.add_argument("--preview", default="lorielee_voice_preview.mp3")
+    plan_parser.add_argument("--preview", default=None,
+                             help="optional existing first clip; defaults to the legacy preview for the original script")
+    plan_parser.add_argument("--no-preview", action="store_true",
+                             help="do not reuse an existing preview clip")
+
     status_parser = commands.add_parser("status")
+    add_path_arguments(status_parser, child=True)
     status_parser.add_argument("--batch", type=int, choices=range(1, 11), default=10)
     status_parser.add_argument("--show-text", action="store_true")
-    commands.add_parser("assemble")
-    commands.add_parser("draft")
-    args = parser.parse_args()
+
+    assemble_parser = commands.add_parser("assemble")
+    add_path_arguments(assemble_parser, child=True)
+    draft_parser = commands.add_parser("draft")
+    add_path_arguments(draft_parser, child=True)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    global SCRIPT, PLAN
+    args = build_parser().parse_args(argv)
+    SCRIPT = project_path(args.script) if args.script else DEFAULT_SCRIPT
+    PLAN = project_path(args.plan) if args.plan else DEFAULT_PLAN
+
     if args.command == "plan":
-        make_plan(args.voice_id, args.preview)
+        if args.no_preview:
+            preview = None
+        elif args.preview:
+            preview = args.preview
+        elif SCRIPT.resolve() == DEFAULT_SCRIPT.resolve():
+            preview = "lorielee_voice_preview.mp3"
+        else:
+            preview = None
+        make_plan(args.voice_id, preview, args.out)
     elif args.command == "status":
         status(args.batch, args.show_text)
     elif args.command == "assemble":
-        assemble()
+        assemble(args.out)
     else:
-        draft()
+        draft(args.out)
 
 
 if __name__ == "__main__":

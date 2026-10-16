@@ -52,6 +52,40 @@ class RevoiceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "source script changed"):
             workflow.validate_plan(plan)
 
+    def test_default_output_name_preserves_legacy_filename(self):
+        self.assertEqual(workflow.default_output_for(Path("podcast_full_script.md")),
+                         "lorielee_full_podcast.mp3")
+        self.assertEqual(workflow.default_output_for(Path("podcast_full_script_2.md")),
+                         "podcast_full_script_2.mp3")
+
+    def test_custom_path_arguments_work_before_and_after_subcommand(self):
+        parser = workflow.build_parser()
+        before = parser.parse_args(["--script", "next.md", "--plan", "next/plan.json",
+                                    "--out", "next.mp3", "status"])
+        after = parser.parse_args(["status", "--script", "next.md", "--plan", "next/plan.json",
+                                   "--out", "next.mp3"])
+        for args in (before, after):
+            self.assertEqual(args.script, "next.md")
+            self.assertEqual(args.plan, "next/plan.json")
+            self.assertEqual(args.out, "next.mp3")
+
+    def test_custom_plan_uses_its_own_script_clip_folder_and_output(self):
+        with self.temporary_root() as temp:
+            root = Path(temp)
+            script = root / "podcast_full_script_2.md"
+            script.write_text("## Глава 1. Первая\n\nПервый текст.\n\n"
+                              "## Глава 2. Вторая\n\nВторой текст.\n")
+            plan_path = root / "podcast_revoice_2" / "plan.json"
+            with patch.multiple(workflow, ROOT=root, SCRIPT=script, PLAN=plan_path):
+                workflow.make_plan("voice-test", preview=None, final_output="episode_2.mp3")
+                plan = workflow.load_plan()
+            self.assertEqual(plan["script"], "podcast_full_script_2.md")
+            self.assertEqual(plan["title"], "Лори Ли. Дорога домой")
+            self.assertEqual(plan["final_output"], "episode_2.mp3")
+            self.assertEqual([clip["file"] for clip in plan["clips"]], [
+                "podcast_revoice_2/part_001.mp3", "podcast_revoice_2/part_002.mp3"])
+            self.assertTrue(all(not clip["reused_preview"] for clip in plan["clips"]))
+
     def test_reordered_chapters_are_rejected(self):
         plan = copy.deepcopy(workflow.load_plan())
         plan["clips"].reverse()

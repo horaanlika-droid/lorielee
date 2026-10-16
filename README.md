@@ -93,12 +93,12 @@
 | [`style.css`](style.css) | оформление, тёмная тема, адаптив под телефон |
 | [`player.js`](player.js) | логика: выбор выпуска, перемотка на главу, скорость 0,75–2×, память места в `localStorage` |
 | [`episodes.json`](episodes.json) | данные плеера: выпуски, главы, таймкоды, статусы |
-| [`scripts/build_player_episodes.py`](scripts/build_player_episodes.py) | собирает `episodes.json` из `plan.json`, `chapters.json` и самих MP3 |
+| [`scripts/build_player_episodes.py`](scripts/build_player_episodes.py) | собирает `episodes.json` из плана и фактической длительности MP3 |
 | [`scripts/serve_local.py`](scripts/serve_local.py) | локальный сервер с поддержкой HTTP Range (206), чтобы перемотка не качала весь файл |
 
-В плеере два выпуска: полный подкаст (12 глав, 47:48) и черновик глав 1–6 прежним голосом.
-В черновике дальше шестой главы идёт начало седьмой — это помечено в подписи главы, потому что
-`plan.json` хранит `partial_chapters: [7]`.
+В плеере три готовых выпуска: полный подкаст (12 глав, 47:48), черновик глав 1–6 прежним голосом
+и отдельное продолжение о личности Ли (9 глав, 10:04). В черновике после шестой главы идёт начало
+седьмой — это помечено в подписи главы, потому что `plan.json` хранит `partial_chapters: [7]`.
 
 Длительности в `episodes.json` читаются из MP3-файлов, а не из отчётов, поэтому таймкоды не
 могут разъехаться с опубликованным звуком. Скрипт отказывается писать файл, если главы
@@ -149,3 +149,47 @@ PCM-поток, вставляет паузы 1,2 с между главами, 
 
 Музыка, чужие записи и фрагменты книги не используются. Прежние версии озвучки создавались
 локальным русским синтезатором; текущие фрагменты созданы выбранными пользователем голосами.
+
+## Продолжение: отдельный сценарий и разбор личности
+
+Исходный `podcast_full_script.md` и его двенадцать глав не переписывались. Новые девять глав живут
+в [`podcast_full_script_2.md`](podcast_full_script_2.md); это самостоятельный биографический выпуск
+по Гроув, а не близкое чтение книг Ли. Тексты книг пока запрошены — список и границы анализа есть в
+[`analysis/laurie_lee_personality.md`](analysis/laurie_lee_personality.md).
+
+- [Аудио продолжения — 10:04](lorielee_personality.mp3) — девять глав, 9 клипов, отдельный голос, план и теги глав.
+- [Предварительный PDF-разбор](analysis/laurie_lee_personality.pdf) — девять осей, в каждой отдельно отмечены факты, осторожный вывод и спорное.
+- [Markdown-источник PDF](analysis/laurie_lee_personality.md)
+- [Иллюстрационные кредиты и лицензии](analysis/credits.md) — без этой таблицы изображения не использовать отдельно.
+- [Генератор PDF](analysis/build_personality_pdf.py); зависимости для анализа: `python -m pip install -r requirements-analysis.txt`.
+
+`revoice_podcast.py` по умолчанию продолжает использовать прежний сценарий и план. Для второго выпуска
+передайте отдельные пути (флаги можно поставить как перед командой, так и после неё):
+
+```bash
+.venv/bin/python scripts/revoice_podcast.py plan \
+  --script podcast_full_script_2.md \
+  --plan podcast_revoice_2/plan.json \
+  --out lorielee_personality.mp3 \
+  --voice-id <выбранный-голос> --no-preview
+
+.venv/bin/python scripts/revoice_podcast.py status \
+  --script podcast_full_script_2.md --plan podcast_revoice_2/plan.json \
+  --batch 10 --show-text
+
+.venv/bin/python scripts/revoice_podcast.py assemble \
+  --script podcast_full_script_2.md --plan podcast_revoice_2/plan.json \
+  --out lorielee_personality.mp3
+
+.venv/bin/python scripts/build_player_episodes.py
+.venv/bin/python -m unittest discover -s tests -v
+```
+
+План второго выпуска использует отдельную папку `podcast_revoice_2/`, а сборка записывает главы в
+`podcast_revoice_2/chapters.json`. `build_player_episodes.py` добавляет выпуск в плеер как `planned`,
+а после успешной сборки MP3 и глав автоматически выставляет `ready`. Лимит `generate_speech` — не
+более десяти фрагментов за ход; в текущем сценарии девять глав, то есть девять клипов.
+
+**Для углублённого разбора по книгам пришлите тексты или фрагменты с номерами страниц.** Без них
+в PDF и сценарии честно разделены документированные биографические факты и гипотезы; близкий анализ
+самих книг не заявляется.
