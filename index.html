@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Лори Ли — что послушать</title>
+<meta name="description" content="Русскоязычные аудио о Лори Ли: подкаст-биография и пересказ книги «Сидр с Рози». Выбор выпуска и глав, плеер запоминает место.">
+<meta name="theme-color" content="#12211c">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Лори Ли · 1914–1997 · деревня Слэд, Глостершир</p>
+    <h1>Что послушать</h1>
+    <p class="lede">Русскоязычные аудио о Лори Ли, собранные в этом репозитории. Выберите выпуск, а внутри — главу: плеер перемотает на неё и запомнит, где вы остановились.</p>
+  </div>
+</header>
+
+<main class="wrap layout">
+  <section class="panel" aria-labelledby="episodes-heading">
+    <h2 id="episodes-heading">Выпуски</h2>
+    <ul id="episode-list" class="episodes"></ul>
+    <p class="hint" id="episodes-note"></p>
+  </section>
+
+  <section class="panel grow" aria-labelledby="chapters-heading">
+    <div class="panel-head">
+      <h2 id="chapters-heading">Главы</h2>
+      <p class="panel-sub" id="episode-sub"></p>
+    </div>
+    <ol id="chapter-list" class="chapters"></ol>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Тексты — авторские пересказы, а не переводы книг Лори Ли: они под копирайтом. Источники и спорные факты — в <a href="podcast_sources.md">podcast_sources.md</a>, весь ход работы — в <a href="README.md">README.md</a>.</p>
+  <p>Работает на GitHub Pages из корня репозитория <a href="https://github.com/horaanlika-droid/lorielee">horaanlika-droid/lorielee</a>.</p>
+</footer>
+
+<div class="player" id="player" hidden>
+  <audio id="audio" preload="metadata"></audio>
+  <div class="bar">
+    <div class="now">
+      <span class="now-episode" id="now-episode"></span>
+      <span class="now-chapter" id="now-chapter"></span>
+    </div>
+    <div class="controls">
+      <button class="btn ghost" id="back" title="Назад 15 секунд">−15</button>
+      <button class="btn primary" id="toggle" aria-label="Играть или остановить">▶</button>
+      <button class="btn ghost" id="fwd" title="Вперёд 30 секунд">+30</button>
+      <button class="btn ghost" id="speed" title="Скорость">1×</button>
+    </div>
+    <div class="seek">
+      <span class="time" id="time-cur">0:00</span>
+      <input type="range" id="scrub" min="0" max="1000" value="0" step="1" aria-label="Позиция">
+      <span class="time" id="time-dur">0:00</span>
+    </div>
+  </div>
+</div>
+
+<script src="player.js"></script>
+</body>
+</html>
