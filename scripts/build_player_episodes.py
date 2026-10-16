@@ -94,7 +94,63 @@ def build() -> list[dict]:
         ],
     })
 
-    # 3. Пересказ «Сидра с Рози» — появится, когда будет записано аудио.
+    # 3. Продолжение биографического выпуска: отдельный сценарий и собственный план.
+    personality_script = ROOT / "podcast_full_script_2.md"
+    personality_plan_path = ROOT / "podcast_revoice_2" / "plan.json"
+    if personality_script.is_file():
+        source_chapters = script_chapters(personality_script)
+        personality_plan = (json.loads(personality_plan_path.read_text())
+                            if personality_plan_path.is_file() else {})
+        personality_audio = personality_plan.get("final_output", "lorielee_personality.mp3")
+        audio_path = Path(personality_audio)
+        if not audio_path.is_absolute():
+            audio_path = ROOT / audio_path
+        assembly = personality_plan.get("assembly")
+        recorded = audio_path.is_file() and bool(assembly)
+        if recorded:
+            total = duration(audio_path)
+            if abs(total - float(assembly.get("duration_seconds", 0))) > 0.5:
+                raise ValueError("The personality episode does not match its assembly plan")
+            chapter_meta = assembly.get("chapters", [])
+            actual_titles = [(int(c["number"]), c["title"]) for c in chapter_meta]
+            if actual_titles != source_chapters:
+                raise ValueError("The personality episode chapter list differs from its script")
+            starts = [float(c["start_seconds"]) for c in chapter_meta]
+            if not starts or starts[0] != 0.0 or starts[-1] >= total:
+                raise ValueError("The personality episode chapter offsets are invalid")
+            lengths = cut(starts, total)
+            chapters_meta = [
+                {"number": c["number"], "title": c["title"],
+                 "start": round(start, 2), "duration": length}
+                for c, start, length in zip(chapter_meta, starts, lengths)
+            ]
+            episode_duration = total
+            status = "ready"
+            characters = sum(int(c.get("characters", 0))
+                             for c in personality_plan.get("clips", []))
+        else:
+            chapters_meta = [
+                {"number": number, "title": title, "start": 0.0, "duration": 0.0}
+                for number, title in source_chapters
+            ]
+            episode_duration = 0.0
+            status = "planned"
+            characters = sum(int(c.get("characters", 0))
+                             for c in personality_plan.get("clips", []))
+        episodes.append({
+            "id": "personality-analysis",
+            "title": "Продолжение: девять способов понять Лори Ли",
+            "description": "Отдельный девятиглавый биографический разбор по Валери Гроув. "
+                           "Это продолжение, а не перепись первых двенадцати глав; тексты книг "
+                           "Ли пока не получены, поэтому близкое чтение произведений не заявляется.",
+            "status": status,
+            "audio": personality_audio,
+            "duration": episode_duration,
+            "characters": characters,
+            "chapters": chapters_meta,
+        })
+
+    # 4. Пересказ «Сидра с Рози» — появится, когда будет записано аудио.
     cider_script = ROOT / "cider_rosie" / "script.md"
     cider_audio = ROOT / "cider_rosie" / "cider_rosie_full.mp3"
     if cider_script.is_file():

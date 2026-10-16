@@ -42,7 +42,7 @@ class EpisodesTests(unittest.TestCase):
     def test_chapters_are_ordered_and_inside_the_audio(self):
         for ep in self.episodes:
             chapters = ep["chapters"]
-            if not chapters:
+            if not chapters or ep["status"] == "planned":
                 continue
             self.assertEqual(chapters[0]["start"], 0.0, f"{ep['id']} must start at zero")
             for previous, current in zip(chapters, chapters[1:]):
@@ -56,9 +56,17 @@ class EpisodesTests(unittest.TestCase):
                                  f"{ep['id']}: chapters run past the end of the audio")
 
     def test_chapter_titles_match_the_script(self):
-        script = (ROOT / "podcast_full_script.md").read_text()
-        titles = {int(n): t for n, t in re.findall(r"^## Глава (\d+)\. (.+)$", script, re.M)}
+        scripts = {
+            "biography": ROOT / "podcast_full_script.md",
+            "biography-draft": ROOT / "podcast_full_script.md",
+            "personality-analysis": ROOT / "podcast_full_script_2.md",
+        }
         for ep in self.episodes:
+            script = scripts.get(ep["id"])
+            if script is None or not ep["chapters"]:
+                continue
+            titles = {int(n): t for n, t in re.findall(
+                r"^## Глава (\d+)\. (.+)$", script.read_text(), re.M)}
             for chapter in ep["chapters"]:
                 self.assertEqual(titles[chapter["number"]], chapter["title"],
                                  f"{ep['id']}: chapter {chapter['number']} title differs")
@@ -70,6 +78,16 @@ class EpisodesTests(unittest.TestCase):
     def test_full_episode_covers_all_twelve_chapters(self):
         full = next(ep for ep in self.episodes if ep["id"] == "biography")
         self.assertEqual([ch["number"] for ch in full["chapters"]], list(range(1, 13)))
+
+    def test_personality_continuation_is_separate_and_has_nine_chapters(self):
+        episode = next(ep for ep in self.episodes if ep["id"] == "personality-analysis")
+        self.assertIn(episode["status"], {"planned", "ready"})
+        self.assertEqual([chapter["number"] for chapter in episode["chapters"]], list(range(1, 10)))
+        self.assertIn("не перепись первых двенадцати глав", episode["description"])
+        self.assertIn("близкое чтение произведений не заявляется", episode["description"])
+        if episode["status"] == "ready":
+            self.assertTrue((ROOT / episode["audio"]).is_file())
+            self.assertGreater(episode["duration"], 0)
 
 
 class SiteFilesTests(unittest.TestCase):
